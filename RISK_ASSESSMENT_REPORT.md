@@ -205,7 +205,7 @@ Where:
 | **Risk Score** | **25 (Critical)**                                                            |
 | **Location**   | `application.properties` (lines 4–5, 13, 19–20); `JwtService.java` (line 20) |
 
-**Description:** Database root password (`4321@Ys2b7`), JWT signing secret (`helloDarknessMyOldFriendIComeToTalkWithYouAgain`), and Mailtrap SMTP credentials are all hardcoded in the source code and committed to version control.
+**Description:** Database root password (`password`), JWT signing secret (`helloDarknessMyOldFriendIComeToTalkWithYouAgain`), and Mailtrap SMTP credentials are all hardcoded in the source code and committed to version control.
 
 **Impact:** Anyone with repository access (or if the repo is public) gains full database admin access, can forge JWT tokens for any user, and can access the email service. This represents a **total system compromise**.
 
@@ -213,7 +213,7 @@ Where:
 
 ```properties
 spring.datasource.username=root
-spring.datasource.password=4321@Ys2b7
+spring.datasource.password=password
 demoBank.app.secret=helloDarknessMyOldFriendIComeToTalkWithYouAgain
 spring.mail.username=2560454d70fce0
 spring.mail.password=47857b0449fa89

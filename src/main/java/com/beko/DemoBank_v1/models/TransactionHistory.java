@@ -6,12 +6,13 @@ import javax.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "v_transaction_history")
+@Table(name = "transaction_history")
 public class TransactionHistory {
 
     @Id
     private int transaction_id;
     private int account_id;
+    private long user_id;
     private String transaction_type;
     private double amount;
     private String source;
@@ -19,6 +20,14 @@ public class TransactionHistory {
     private String reason_code;
 
     private LocalDateTime created_at;
+
+    public long getUser_id() {
+        return user_id;
+    }
+
+    public void setUser_id(long user_id) {
+        this.user_id = user_id;
+    }
 
     public LocalDateTime getCreated_at() {
         return created_at;
@@ -83,6 +92,5 @@ public class TransactionHistory {
     public void setReason_code(String reason_code) {
         this.reason_code = reason_code;
     }
-
 
 }

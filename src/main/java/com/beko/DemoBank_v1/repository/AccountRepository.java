@@ -21,7 +21,7 @@ public interface AccountRepository extends CrudRepository<Account, Integer> {
         @Query(value = "SELECT sum(balance) FROM accounts WHERE user_id = :user_id", nativeQuery = true)
         BigDecimal getTotalBalance(@Param("user_id") long user_id);
 
-        @Query(value = "SELECT balance FROM accounts WHERE user_id = :user_id AND account_id = :account_id", nativeQuery = true)
+        @Query(value = "SELECT COALESCE(balance, 0) FROM accounts WHERE user_id = :user_id AND account_id = :account_id", nativeQuery = true)
         double getAccountBalance(@Param("user_id") long user_id, @Param("account_id") int account_id);
 
         @Modifying
@@ -30,8 +30,8 @@ public interface AccountRepository extends CrudRepository<Account, Integer> {
         void changeAccountsBalanceById(@Param("new_balance") double new_balance, @Param("account_id") int account_id);
 
         @Modifying
-        @Query(value = "INSERT INTO accounts(user_id, account_number, account_name, account_type) VALUES" +
-                        "(:user_id, :account_number, :account_name, :account_type)", nativeQuery = true)
+        @Query(value = "INSERT INTO accounts(user_id, account_number, account_name, account_type, balance) VALUES" +
+                        "(:user_id, :account_number, :account_name, :account_type, 0)", nativeQuery = true)
 
         @Transactional
         void createBankAccount(@Param("user_id") long user_id,

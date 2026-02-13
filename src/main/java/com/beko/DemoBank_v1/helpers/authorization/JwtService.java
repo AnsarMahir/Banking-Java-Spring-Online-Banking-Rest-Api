@@ -59,8 +59,9 @@ public class JwtService {
     }
 
     public String getAccessTokenFromHeader(String req){
-        String[] parts = req.split(" ");
-        return parts[1];
+        // Handle both "Bearer token" and "Bearer: token" formats
+        String token = req.replace("Bearer:", "").replace("Bearer", "").trim();
+        return token;
     }
 
     public Date getTokenExpiration(String token) {

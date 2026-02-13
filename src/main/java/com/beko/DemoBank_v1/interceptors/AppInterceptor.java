@@ -58,6 +58,12 @@ public class AppInterceptor implements HandlerInterceptor{
             //Decode Token
             System.out.println("Jwt from logout: " + token);
             Claims claims = jwtService.decodeToken(token);
+            
+            //Check if token is valid and not null
+            if(claims == null) {
+                throw new CustomError("Invalid or expired token. Please login again.", HttpServletResponse.SC_UNAUTHORIZED);
+            }
+            
             String email = claims.getSubject(); //email burada
 
             //Get User By Email

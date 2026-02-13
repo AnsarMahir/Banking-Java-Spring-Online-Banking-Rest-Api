@@ -5,6 +5,7 @@ import com.beko.DemoBank_v1.controllers.AuthController;
 import com.beko.DemoBank_v1.exception.CustomError;
 import com.beko.DemoBank_v1.helpers.authorization.JwtService;
 import com.beko.DemoBank_v1.models.User;
+import com.beko.DemoBank_v1.repository.BlacklistedTokenRepository;
 import com.beko.DemoBank_v1.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +22,14 @@ import java.io.IOException;
 @Component
 public class AppInterceptor implements HandlerInterceptor{
     public UserRepository userRepository;
-    @Autowired
-    public AppInterceptor(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    public BlacklistedTokenRepository blacklistedTokenRepository;
     private JwtService jwtService = new JwtService();
+    
+    @Autowired
+    public AppInterceptor(UserRepository userRepository, BlacklistedTokenRepository blacklistedTokenRepository) {
+        this.userRepository = userRepository;
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
+    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException, CustomError {
@@ -45,6 +49,11 @@ public class AppInterceptor implements HandlerInterceptor{
             System.out.println("Hereee is theeeeeeeeeeeeeeeeeee header: "+ header);
             //Get Access Token From Header
             String token = jwtService.getAccessTokenFromHeader(header);
+
+            //Check if token is blacklisted
+            if(blacklistedTokenRepository.isTokenBlacklisted(token)) {
+                throw new CustomError("Token has been revoked. Please login again.", HttpServletResponse.SC_UNAUTHORIZED);
+            }
 
             //Decode Token
             System.out.println("Jwt from logout: " + token);

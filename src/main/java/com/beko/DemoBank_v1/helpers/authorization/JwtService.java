@@ -63,9 +63,14 @@ public class JwtService {
         return parts[1];
     }
 
-
-
-
-
+    public Date getTokenExpiration(String token) {
+        try {
+            Claims claims = decodeToken(token);
+            return claims != null ? claims.getExpiration() : null;
+        } catch (Exception e) {
+            System.out.println("Could not get token expiration.");
+            return null;
+        }
+    }
 
 }

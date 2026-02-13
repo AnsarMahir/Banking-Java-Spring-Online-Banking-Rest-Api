@@ -92,6 +92,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<?> logout(HttpSession session) {
         try {
+            Object tokenObj = session.getAttribute("token");
+            if (tokenObj instanceof String) {
+                jwtService.revokeToken((String) tokenObj);
+            }
             session.invalidate();
             return ResponseEntity.ok("Logged out successfully.");
         } catch (Exception e) {

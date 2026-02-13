@@ -228,7 +228,7 @@ public class TransactServiceImpl implements TransactService {
             // Atomic transfer with locking
             BigDecimal sourceBalance = accountRepository.getAccountBalanceWithLock(userId, sourceAccountId);
 
-            if (sourceBalance < transferAmount) {
+            if (sourceBalance.compareTo(transferAmount) < 0) {
                 handleInsufficientFunds(sourceAccountId, userId);
                 return ResponseEntity.badRequest().body("You have insufficient funds to perform this transfer.");
             }
@@ -283,7 +283,7 @@ public class TransactServiceImpl implements TransactService {
     }
 
     private void handleInsufficientFunds(int accountId, long userId) {
-        transactRepository.logTransaction(accountId, userId, "withdrawal", BigDecimal.ZERO, "online", "failed",
+        transactRepository.logTransaction(accountId, userId, "withdrawal", 0.0, "online", "failed",
                 "Insufficient funds.",
                 LocalDateTime.now());
     }

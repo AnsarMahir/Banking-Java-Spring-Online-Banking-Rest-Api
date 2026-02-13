@@ -14,6 +14,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
 import javax.mail.MessagingException;
+import java.security.SecureRandom;
 import java.util.*;
 
 @Service
@@ -32,9 +33,14 @@ public class RegisterServiceImpl implements RegisterService {
         String email = user.getEmail();
         String password = user.getPassword();
 
-        // TODO: CHECK FOR PASSWORD MATCH:
+        // CHECK PASSWORD COMPLEXITY:
+        String passwordError = validatePasswordStrength(password);
+        if (passwordError != null)
+            return ResponseEntity.badRequest().body(passwordError);
+
+        // CHECK FOR PASSWORD MATCH:
         if (!password.equals(confirmPassword))
-            return ResponseEntity.badRequest().body("Şifreler uyuşmuyor.");
+            return ResponseEntity.badRequest().body("Passwords do not match.");
 
         // TODO: GET TOKEN STRING:
         String token = Token.generateToken();
@@ -66,7 +72,7 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     private void sendEmailNotification(String email, String emailBody) {
-        
+
         try {
             mailMessenger.htmlEmailMessenger("user@beko.com", email, "Verify Account", emailBody);
         } catch (MessagingException e) {
@@ -74,11 +80,24 @@ public class RegisterServiceImpl implements RegisterService {
         }
     }
 
+    private static String validatePasswordStrength(String password) {
+        if (password.length() < 8)
+            return "Password must be at least 8 characters long.";
+        if (!password.matches(".*[A-Z].*"))
+            return "Password must contain at least one uppercase letter.";
+        if (!password.matches(".*[a-z].*"))
+            return "Password must contain at least one lowercase letter.";
+        if (!password.matches(".*\\d.*"))
+            return "Password must contain at least one numeric digit.";
+        if (!password.matches(".*[@#$%&!^*()_+=\\-].*"))
+            return "Password must contain at least one special character (e.g., @, #, $, %, &).";
+        return null;
+    }
+
     private static int generateRandomCode() {
-        
-        Random rand = new Random();
-        int bound = 123;
-        int code = bound * rand.nextInt(bound);
-        return code;
+        SecureRandom secureRandom = new SecureRandom();
+        // Generates a 6-digit code between 100000 and 999999 (1,000,000 possible
+        // values)
+        return 100000 + secureRandom.nextInt(900000);
     }
 }

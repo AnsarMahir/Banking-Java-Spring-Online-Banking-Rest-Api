@@ -1,28 +1,56 @@
 package com.beko.DemoBank_v1.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import javax.validation.constraints.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users")  // CRITICAL FIX: Changed from "user" to "users" to match actual table name
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Long user_id; // Change to Long instead of String
+    private Long user_id;
+
     @NotEmpty(message = "The First name field cannot be empty.")
-    @Size(min = 3, message = "The first nmae field must greater that 3 characters")
+    @Size(min = 3, message = "The first name field must be greater than 3 characters")
     private String first_name;
+
     @NotEmpty(message = "The Last name field cannot be empty.")
-    @Size(min = 3, message = "The first nmae field must greater that 3 characters")
+    @Size(min = 3, message = "The last name field must be greater than 3 characters")
     private String last_name;
+
     @Email
     @NotEmpty(message = "Email field cannot be empty.")
-    @Pattern(regexp = "([a-zA-Z0-9]+(?:[._+-][a-zA-Z0-9]+)*)@([a-zA-Z0-9]+(?:[.-][a-zA-Z0-9]+)*[.][a-zA-Z]{2,})", message = "Please enter a valid email.")
+    @Pattern(regexp = "([a-zA-Z0-9]+(?:[._+-][a-zA-Z0-9]+)*)@([a-zA-Z0-9]+(?:[.-][a-zA-Z0-9]+)*[.][a-zA-Z]{2,})",
+            message = "Please enter a valid email.")
     private String email;
 
+    // CRITICAL FIX (V-11, V-17): Add @JsonIgnore to prevent password exposure in API responses
+    @NotEmpty(message = "Password field cannot be empty.")
+    @NotNull
+    @Size(min = 8, message = "Password must be at least 8 characters long")  // CRITICAL FIX (V-33): Add password policy
+    @JsonIgnore
+    private String password;
+
+    // CRITICAL FIX (V-11, V-17): Add @JsonIgnore to prevent token exposure
+    @JsonIgnore
+    private String token;
+
+    // CRITICAL FIX (V-11, V-17): Add @JsonIgnore to prevent verification code exposure
+    @JsonIgnore
+    private String code;
+
+    private int verified;
+    private LocalDate verified_at;
+    private LocalDateTime create_at;
+    private LocalDateTime updated_at;
+
+    // Getters and Setters
     public Long getUser_id() {
         return user_id;
     }
@@ -110,15 +138,4 @@ public class User {
     public void setUpdated_at(LocalDateTime updated_at) {
         this.updated_at = updated_at;
     }
-
-    @NotEmpty(message = "Password field cannot be empty.")
-    @NotNull
-    private String password;
-    private String token;
-    private String code;
-    private int verified;
-    private LocalDate verified_at;
-    private LocalDateTime create_at;
-    private LocalDateTime updated_at;
-
 }

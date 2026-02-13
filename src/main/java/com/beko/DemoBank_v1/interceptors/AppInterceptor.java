@@ -1,15 +1,14 @@
 package com.beko.DemoBank_v1.interceptors;
 
-
-import com.beko.DemoBank_v1.controllers.AuthController;
 import com.beko.DemoBank_v1.exception.CustomError;
 import com.beko.DemoBank_v1.helpers.authorization.JwtService;
 import com.beko.DemoBank_v1.models.User;
 import com.beko.DemoBank_v1.repository.UserRepository;
 import io.jsonwebtoken.Claims;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -19,73 +18,98 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 @Component
-public class AppInterceptor implements HandlerInterceptor{
-    public UserRepository userRepository;
+public class AppInterceptor implements HandlerInterceptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(AppInterceptor.class);
+
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
+
     @Autowired
-    public AppInterceptor(UserRepository userRepository) {
+    public AppInterceptor(UserRepository userRepository, JwtService jwtService) {
         this.userRepository = userRepository;
+        // CRITICAL FIX (V-22): Use @Autowired JwtService instead of manual instantiation
+        this.jwtService = jwtService;
     }
-    private JwtService jwtService = new JwtService();
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException, CustomError {
-        System.out.println("In Pre Handle Interceptor Method");
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws IOException, CustomError {
 
-        //TODO: CHECK REQUEST URI:
-        if(request.getRequestURI().startsWith("/app") || request.getRequestURI().startsWith("/transact") || request.getRequestURI().startsWith("/logout") || request.getRequestURI().startsWith("/account")){
+        logger.debug("Processing authentication for URI: {}", request.getRequestURI());
 
+        // Check if request requires authentication
+        if (request.getRequestURI().startsWith("/app") ||
+                request.getRequestURI().startsWith("/transact") ||
+                request.getRequestURI().startsWith("/logout") ||
+                request.getRequestURI().startsWith("/account")) {
 
-            //Get Header:
+            // Get Authorization header
             String header = request.getHeader("Authorization");
 
-            //Check Is Token Included
-            if(jwtService.isTokenIncluded(header)==false)
-                throw new CustomError("You need to be logged in.",HttpServletResponse.SC_UNAUTHORIZED);
+            // Check if token is included
+            if (!jwtService.isTokenIncluded(header)) {
+                logger.warn("Missing authorization token for URI: {}", request.getRequestURI());
+                throw new CustomError("You need to be logged in.", HttpServletResponse.SC_UNAUTHORIZED);
+            }
 
-            System.out.println("Hereee is theeeeeeeeeeeeeeeeeee header: "+ header);
-            //Get Access Token From Header
+            // CRITICAL FIX (V-21): Removed debug logging of sensitive tokens
+            // Never log: System.out.println("Header: " + header);
+
+            // Get Access Token From Header
             String token = jwtService.getAccessTokenFromHeader(header);
 
-            //Decode Token
-            System.out.println("Jwt from logout: " + token);
+            // CRITICAL FIX (V-06): Add null check before using claims
             Claims claims = jwtService.decodeToken(token);
-            String email = claims.getSubject(); //email burada
 
-            //Get User By Email
+            if (claims == null) {
+                logger.warn("Invalid or expired token for URI: {}", request.getRequestURI());
+                throw new CustomError("Invalid or expired token. Please login again.",
+                        HttpServletResponse.SC_UNAUTHORIZED);
+            }
+
+            String email = claims.getSubject();
+
+            if (email == null || email.isEmpty()) {
+                logger.warn("Token missing email subject");
+                throw new CustomError("Invalid token. Please login again.",
+                        HttpServletResponse.SC_UNAUTHORIZED);
+            }
+
+            // Get User By Email
             User user = userRepository.getUserDetails(email);
 
-            //Open Session
-            request.getSession().setAttribute("user",user);
-            request.getSession().setAttribute("token",token);
-
-
-            //TODO: Get Token Stored int Session:
-            System.out.println("allahım lütfen token yazsın "+ request.getSession().getAttribute("token"));
-
-            //TODO: Get User Object Stored In Session:
-            System.out.println("allahım lütfen user yazsın "+ request.getSession().getAttribute("user"));
-
-            //TODO: Validate Session Attributes / Objects:
-            if(user == null ){
-                throw new CustomError("You need to be logged in.",HttpServletResponse.SC_UNAUTHORIZED);
+            if (user == null) {
+                logger.warn("User not found for email in token: {}", email);
+                throw new CustomError("You need to be logged in.", HttpServletResponse.SC_UNAUTHORIZED);
             }
-            //End of Validate Session//Attributes
+
+            // Open Session
+            HttpSession session = request.getSession();
+            session.setAttribute("user", user);
+            session.setAttribute("token", token);
+
+            // CRITICAL FIX (V-21): Removed debug logging of sensitive session data
+            // Never log: System.out.println("User: " + user);
+            // Never log: System.out.println("Token: " + token);
+
+            logger.debug("Authentication successful for user: {}", email);
         }
 
         return true;
-        // End of Check Request URI
-    }
-    //End Of Pre Handle Method
-
-
-    @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-        System.out.println("After Handle Interceptor Method");
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        System.out.println("After Completion Interceptor Method");
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+                           ModelAndView modelAndView) throws Exception {
+        logger.debug("Post-handle processing complete");
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,
+                                Exception ex) throws Exception {
+        if (ex != null) {
+            logger.error("Request completed with exception", ex);
+        }
     }
 }
-//End of Interceptor Class

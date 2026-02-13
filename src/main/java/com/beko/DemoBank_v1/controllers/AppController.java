@@ -1,13 +1,6 @@
 package com.beko.DemoBank_v1.controllers;
 
-
-import com.beko.DemoBank_v1.models.Account;
-import com.beko.DemoBank_v1.models.PaymentHistory;
-import com.beko.DemoBank_v1.models.TransactionHistory;
 import com.beko.DemoBank_v1.models.User;
-import com.beko.DemoBank_v1.repository.AccountRepository;
-import com.beko.DemoBank_v1.repository.PaymentHistoryRepository;
-import com.beko.DemoBank_v1.repository.TransactHistoryRepository;
 import com.beko.DemoBank_v1.service.AppService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,57 +12,62 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpSession;
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Controller
 @RequestMapping("/app")
 public class AppController {
 
-
-    @Autowired
-    private TransactHistoryRepository transactHistoryRepository;
-
     @Autowired
     private AppService appService;
 
-    User user;
+    // CRITICAL FIX (V-07): Removed instance-level User variable to prevent thread-safety issues
 
     @GetMapping("/dashboard")
     public ResponseEntity<?> getDashboard(HttpSession session) {
-        //Get the details of the logged in user:
-        user = (User) session.getAttribute("user");
+        // CRITICAL FIX (V-07): Use local variable instead of instance field
+        User user = (User) session.getAttribute("user");
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You must be logged in.");
+        }
 
         return appService.getDashboard(user);
     }
 
     @GetMapping("/payment_history")
     public ResponseEntity<?> getPaymentHistory(HttpSession session) {
-        //Get the details of the logged in user:
-        user = (User) session.getAttribute("user");
+        // CRITICAL FIX (V-07): Use local variable
+        User user = (User) session.getAttribute("user");
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You must be logged in.");
+        }
 
         return appService.getPaymentHistory(user);
     }
 
     @GetMapping("/transaction_history")
     public ResponseEntity<?> getTransactionHistory(HttpSession session) {
-        //Get the details of the logged in user:
-        user = (User) session.getAttribute("user");
+        // CRITICAL FIX (V-07): Use local variable
+        User user = (User) session.getAttribute("user");
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You must be logged in.");
+        }
 
         return appService.getTransactionHistory(user);
     }
 
-
     @PostMapping("/account_transaction_history")
     public ResponseEntity<?> getAccountTransactionHistory(@RequestBody Map<String, String> requestMap, HttpSession session) {
+        // CRITICAL FIX (V-05): Pass user to service for ownership validation
+        User user = (User) session.getAttribute("user");
 
-        return appService.getAccountTransactionHistory(requestMap);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You must be logged in.");
+        }
+
+        return appService.getAccountTransactionHistory(requestMap, user);
     }
-
-
 }
-
-
-

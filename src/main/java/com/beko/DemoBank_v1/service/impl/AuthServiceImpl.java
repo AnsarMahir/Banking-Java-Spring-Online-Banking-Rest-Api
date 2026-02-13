@@ -5,6 +5,7 @@ import com.beko.DemoBank_v1.helpers.authorization.JwtService;
 import com.beko.DemoBank_v1.models.User;
 import com.beko.DemoBank_v1.repository.UserRepository;
 import com.beko.DemoBank_v1.service.AuthService;
+import com.beko.DemoBank_v1.util.SecureLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ResponseEntity<?> login(String email, String password, HttpSession session, HttpServletResponse response) {
-        logger.debug("Login attempt for email: {}", email);
+        logger.debug("Login attempt for email: {}", SecureLogUtil.maskSensitive(email));
         try {
             logger.debug("Validating input fields");
             validateInputFields(email, password);
@@ -43,16 +44,16 @@ public class AuthServiceImpl implements AuthService {
             String userEmailInDatabase = userRepository.getUserEmail(email);
 
             if (userEmailInDatabase == null) {
-                logger.warn("User not found: {}", email);
+                logger.warn("User not found: {}", SecureLogUtil.maskSensitive(email));
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect Username or Password");
             }
 
-            logger.debug("Fetching password for user: {}", userEmailInDatabase);
+            logger.debug("Fetching password for user: {}", SecureLogUtil.maskSensitive(userEmailInDatabase));
             String passwordInDatabase = userRepository.getUserPassword(userEmailInDatabase);
 
             logger.debug("Checking password match");
             if (!BCrypt.checkpw(password, passwordInDatabase)) {
-                logger.warn("Password mismatch for user: {}", email);
+                logger.warn("Password mismatch for user: {}", SecureLogUtil.maskSensitive(email));
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect Username or Password");
             }
 
@@ -60,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
             int verified = userRepository.isVerified(userEmailInDatabase);
 
             if (verified != 1) {
-                logger.warn("Account not verified: {}", email);
+                logger.warn("Account not verified: {}", SecureLogUtil.maskSensitive(email));
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Account verification required.");
             }
 
@@ -77,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
 
             logger.debug("Setting session attributes");
             session.setAttribute("user", user);
-            session.setAttribute("token", jwt);
+            session.setAttribute("token", SecureLogUtil.maskSensitive(jwt));
             session.setAttribute("authenticated", true);
 
             logger.info("Login successful for user: {}", email);

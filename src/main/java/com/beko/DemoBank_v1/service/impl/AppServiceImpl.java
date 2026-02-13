@@ -8,6 +8,7 @@ import com.beko.DemoBank_v1.repository.AccountRepository;
 import com.beko.DemoBank_v1.repository.PaymentHistoryRepository;
 import com.beko.DemoBank_v1.repository.TransactHistoryRepository;
 import com.beko.DemoBank_v1.service.AppService;
+import com.beko.DemoBank_v1.util.SecureLogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -68,15 +69,17 @@ public class AppServiceImpl implements AppService {
     public ResponseEntity<?> getTransactionHistory(User user) {
         try {
             long userId = user.getUser_id();
-            System.out.println("[TXN_HISTORY] userId=" + userId);
+            System.out.println("[TXN_HISTORY] userId=" + SecureLogUtil.maskSensitive(String.valueOf(userId)));
 
             List<TransactionHistory> userTransactionHistory = transactHistoryRepository
                     .getTransactionRecordsById(userId);
             System.out.println("[TXN_HISTORY] records found=" + userTransactionHistory.size());
             for (TransactionHistory t : userTransactionHistory) {
-                System.out.println("[TXN_HISTORY] txn_id=" + t.getTransaction_id() + ", account_id=" + t.getAccount_id()
-                        + ", user_id=" + t.getUser_id() + ", type=" + t.getTransaction_type() + ", amount="
-                        + t.getAmount());
+                System.out.println("[TXN_HISTORY] txn_id=" + SecureLogUtil.maskSensitive(String.valueOf(t.getTransaction_id())) +
+                                   ", account_id=" + SecureLogUtil.maskSensitive(String.valueOf(t.getAccount_id())) +
+                                   ", user_id=" + SecureLogUtil.maskSensitive(String.valueOf(t.getUser_id())) +
+                                   ", type=" + t.getTransaction_type() +
+                                   ", amount=" + t.getAmount());
             }
 
             Map<String, List> response = new HashMap<>();

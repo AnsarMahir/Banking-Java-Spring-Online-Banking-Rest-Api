@@ -35,7 +35,6 @@ public class IndexServiceImpl implements IndexService {
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Verification success.");
-            System.out.println("In Verify Account Controller");
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

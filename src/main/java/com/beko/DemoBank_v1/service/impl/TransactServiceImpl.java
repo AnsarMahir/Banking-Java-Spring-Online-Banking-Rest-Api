@@ -31,38 +31,37 @@ public class TransactServiceImpl implements TransactService {
 
     public ResponseEntity deposit(Map<String, String> requestMap, User user) {
         try {
-            System.out.println("===== DEPOSIT START =====");
-            System.out.println("[1] requestMap: " + requestMap);
+            //System.out.println("===== DEPOSIT START =====");
+            //System.out.println("[1] requestMap: " + requestMap);
 
             validateDepositRequest(requestMap);
-            System.out.println("[2] Validation passed");
+            //System.out.println("[2] Validation passed");
 
             int accountId = Integer.parseInt(requestMap.get("account_id"));
             double depositAmount = Double.parseDouble(requestMap.get("deposit_amount"));
             long userId = user.getUser_id();
-            System.out
-                    .println("[3] accountId=" + accountId + ", depositAmount=" + depositAmount + ", userId=" + userId);
+            //System.out.println("[3] accountId=" + accountId + ", depositAmount=" + depositAmount + ", userId=" + userId);
 
             double currentBalance = accountRepository.getAccountBalance(userId, accountId);
-            System.out.println("[4] currentBalance=" + currentBalance);
+            //System.out.println("[4] currentBalance=" + currentBalance);
 
             double newBalance = currentBalance + depositAmount;
-            System.out.println("[5] newBalance=" + newBalance);
+            //System.out.println("[5] newBalance=" + newBalance);
 
             accountRepository.changeAccountsBalanceById(newBalance, accountId);
-            System.out.println("[6] Balance updated in DB");
+            //System.out.println("[6] Balance updated in DB");
 
             transactRepository.logTransaction(accountId, userId, "deposit", depositAmount, "online", "success",
                     "Deposit Transaction Successful", LocalDateTime.now());
-            System.out.println("[7] Transaction logged");
+            //System.out.println("[7] Transaction logged");
 
             ResponseEntity response = ResponseEntity.ok(buildDepositResponse(userId));
-            System.out.println("[8] Response built successfully");
-            System.out.println("===== DEPOSIT END =====");
+            //System.out.println("[8] Response built successfully");
+            //System.out.println("===== DEPOSIT END =====");
             return response;
 
         } catch (Exception e) {
-            System.out.println("[ERROR] Deposit failed: " + e.getClass().getName() + " - " + e.getMessage());
+            //System.out.println("[ERROR] Deposit failed: " + e.getClass().getName() + " - " + e.getMessage());
             e.printStackTrace();
             return handleException(e);
         }

@@ -5,6 +5,7 @@ import com.beko.DemoBank_v1.helpers.authorization.JwtService;
 import com.beko.DemoBank_v1.models.User;
 import com.beko.DemoBank_v1.repository.UserRepository;
 import com.beko.DemoBank_v1.service.AuthService;
+import com.beko.DemoBank_v1.util.SecureLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class AuthController {
         String email = requestMap.get("email");
         String password = requestMap.get("password");
 
-        logger.debug("Email from request: {}", email);
+        logger.debug("Email from request: {}", SecureLogUtil.maskSensitive(email));
 
         return authService.login(email, password, session, response);
     }

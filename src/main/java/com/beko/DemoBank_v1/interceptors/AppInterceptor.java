@@ -6,6 +6,7 @@ import com.beko.DemoBank_v1.exception.CustomError;
 import com.beko.DemoBank_v1.helpers.authorization.JwtService;
 import com.beko.DemoBank_v1.models.User;
 import com.beko.DemoBank_v1.repository.UserRepository;
+import com.beko.DemoBank_v1.util.SecureLogUtil;
 import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ public class AppInterceptor implements HandlerInterceptor{
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException, CustomError {
-        System.out.println("In Pre Handle Interceptor Method");
+        //System.out.println("In Pre Handle Interceptor Method");
 
         //TODO: CHECK REQUEST URI:
         if(request.getRequestURI().startsWith("/app") || request.getRequestURI().startsWith("/transact") || request.getRequestURI().startsWith("/logout") || request.getRequestURI().startsWith("/account")){
@@ -42,12 +43,11 @@ public class AppInterceptor implements HandlerInterceptor{
             if(jwtService.isTokenIncluded(header)==false)
                 throw new CustomError("You need to be logged in.",HttpServletResponse.SC_UNAUTHORIZED);
 
-            System.out.println("Hereee is theeeeeeeeeeeeeeeeeee header: "+ header);
             //Get Access Token From Header
             String token = jwtService.getAccessTokenFromHeader(header);
 
             //Decode Token
-            System.out.println("Jwt from logout: " + token);
+            System.out.println("Jwt from logout: " + SecureLogUtil.maskSensitive(token));
             Claims claims = jwtService.decodeToken(token);
             String email = claims.getSubject(); //email burada
 
@@ -60,10 +60,10 @@ public class AppInterceptor implements HandlerInterceptor{
 
 
             //TODO: Get Token Stored int Session:
-            System.out.println("allahım lütfen token yazsın "+ request.getSession().getAttribute("token"));
+            //System.out.println("allahım lütfen token yazsın "+ request.getSession().getAttribute("token"));
 
             //TODO: Get User Object Stored In Session:
-            System.out.println("allahım lütfen user yazsın "+ request.getSession().getAttribute("user"));
+            //System.out.println("allahım lütfen user yazsın "+ request.getSession().getAttribute("user"));
 
             //TODO: Validate Session Attributes / Objects:
             if(user == null ){

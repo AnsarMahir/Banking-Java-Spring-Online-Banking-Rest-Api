@@ -25,9 +25,7 @@ public class AppInterceptor implements HandlerInterceptor {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
-
-    public BlacklistedTokenRepository blacklistedTokenRepository;
-    private JwtService jwtService = new JwtService();
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
     
     @Autowired
     public AppInterceptor(UserRepository userRepository, BlacklistedTokenRepository blacklistedTokenRepository, JwtService jwtService) {

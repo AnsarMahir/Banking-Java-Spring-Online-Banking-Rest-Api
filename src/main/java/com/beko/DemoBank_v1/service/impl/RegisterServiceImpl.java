@@ -66,7 +66,7 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     private void sendEmailNotification(String email, String emailBody) {
-        // TODO: SEND EMAIL NOTIFICATION
+        
         try {
             mailMessenger.htmlEmailMessenger("user@beko.com", email, "Verify Account", emailBody);
         } catch (MessagingException e) {
@@ -75,7 +75,7 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     private static int generateRandomCode() {
-        // TODO: GENERATE RANDOM CODE:
+        
         Random rand = new Random();
         int bound = 123;
         int code = bound * rand.nextInt(bound);

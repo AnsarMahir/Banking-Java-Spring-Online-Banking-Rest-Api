@@ -31,23 +31,39 @@ public class TransactServiceImpl implements TransactService {
 
     public ResponseEntity deposit(Map<String, String> requestMap, User user) {
         try {
+            System.out.println("===== DEPOSIT START =====");
+            System.out.println("[1] requestMap: " + requestMap);
+
             validateDepositRequest(requestMap);
+            System.out.println("[2] Validation passed");
 
             int accountId = Integer.parseInt(requestMap.get("account_id"));
             double depositAmount = Double.parseDouble(requestMap.get("deposit_amount"));
             long userId = user.getUser_id();
+            System.out
+                    .println("[3] accountId=" + accountId + ", depositAmount=" + depositAmount + ", userId=" + userId);
 
             double currentBalance = accountRepository.getAccountBalance(userId, accountId);
+            System.out.println("[4] currentBalance=" + currentBalance);
+
             double newBalance = currentBalance + depositAmount;
+            System.out.println("[5] newBalance=" + newBalance);
 
             accountRepository.changeAccountsBalanceById(newBalance, accountId);
+            System.out.println("[6] Balance updated in DB");
 
-            transactRepository.logTransaction(accountId, "deposit", depositAmount, "online", "success",
+            transactRepository.logTransaction(accountId, userId, "deposit", depositAmount, "online", "success",
                     "Deposit Transaction Successful", LocalDateTime.now());
+            System.out.println("[7] Transaction logged");
 
-            return ResponseEntity.ok(buildDepositResponse(userId));
+            ResponseEntity response = ResponseEntity.ok(buildDepositResponse(userId));
+            System.out.println("[8] Response built successfully");
+            System.out.println("===== DEPOSIT END =====");
+            return response;
 
         } catch (Exception e) {
+            System.out.println("[ERROR] Deposit failed: " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
             return handleException(e);
         }
     }
@@ -63,14 +79,14 @@ public class TransactServiceImpl implements TransactService {
             double currentBalance = accountRepository.getAccountBalance(userId, accountId);
 
             if (currentBalance < paymentAmount) {
-                handleInsufficientFunds(accountId);
+                handleInsufficientFunds(accountId, userId);
                 return ResponseEntity.badRequest().body("You have insufficient funds to perform this payment.");
             }
 
             double newBalance = currentBalance - paymentAmount;
             accountRepository.changeAccountsBalanceById(newBalance, accountId);
 
-            transactRepository.logTransaction(accountId, "Payment", paymentAmount, "online", "success",
+            transactRepository.logTransaction(accountId, userId, "Payment", paymentAmount, "online", "success",
                     "Payment Transaction Successful", LocalDateTime.now());
 
             return ResponseEntity.ok(buildPaymentResponse(userId));
@@ -91,14 +107,14 @@ public class TransactServiceImpl implements TransactService {
             double currentBalance = accountRepository.getAccountBalance(userId, accountId);
 
             if (currentBalance < withdrawalAmount) {
-                handleInsufficientFunds(accountId);
+                handleInsufficientFunds(accountId, userId);
                 return ResponseEntity.badRequest().body("You have insufficient funds to perform this withdrawal.");
             }
 
             double newBalance = currentBalance - withdrawalAmount;
             accountRepository.changeAccountsBalanceById(newBalance, accountId);
 
-            transactRepository.logTransaction(accountId, "Withdrawal", withdrawalAmount, "online", "success",
+            transactRepository.logTransaction(accountId, userId, "Withdrawal", withdrawalAmount, "online", "success",
                     "Withdrawal Transaction Successful", LocalDateTime.now());
 
             return ResponseEntity.ok(buildWithdrawalResponse(userId));
@@ -125,7 +141,7 @@ public class TransactServiceImpl implements TransactService {
             double sourceBalance = accountRepository.getAccountBalance(userId, sourceAccountId);
 
             if (sourceBalance < transferAmount) {
-                handleInsufficientFunds(sourceAccountId);
+                handleInsufficientFunds(sourceAccountId, userId);
                 return ResponseEntity.badRequest().body("You have insufficient funds to perform this transfer.");
             }
 
@@ -136,7 +152,7 @@ public class TransactServiceImpl implements TransactService {
             accountRepository.changeAccountsBalanceById(newSourceBalance, sourceAccountId);
             accountRepository.changeAccountsBalanceById(newTargetBalance, targetAccountId);
 
-            transactRepository.logTransaction(sourceAccountId, "Transfer", transferAmount, "online", "success",
+            transactRepository.logTransaction(sourceAccountId, userId, "Transfer", transferAmount, "online", "success",
                     "Transfer Transaction Successful", LocalDateTime.now());
 
             return ResponseEntity.ok(buildTransferResponse(userId));
@@ -224,8 +240,9 @@ public class TransactServiceImpl implements TransactService {
         }
     }
 
-    private void handleInsufficientFunds(int accountId) {
-        transactRepository.logTransaction(accountId, "withdrawal", 0.0, "online", "failed", "Insufficient funds.",
+    private void handleInsufficientFunds(int accountId, long userId) {
+        transactRepository.logTransaction(accountId, userId, "withdrawal", 0.0, "online", "failed",
+                "Insufficient funds.",
                 LocalDateTime.now());
     }
 

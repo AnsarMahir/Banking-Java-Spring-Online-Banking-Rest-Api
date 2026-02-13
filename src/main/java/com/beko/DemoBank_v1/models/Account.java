@@ -1,8 +1,6 @@
 package com.beko.DemoBank_v1.models;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -10,6 +8,8 @@ import java.time.LocalDateTime;
 @Table(name = "accounts")
 public class Account {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "account_id")
     private int account_id;
     private long user_id;
     private String account_number;

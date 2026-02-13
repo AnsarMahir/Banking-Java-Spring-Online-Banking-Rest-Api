@@ -104,11 +104,15 @@ public class RegisterServiceImpl implements RegisterService {
         }
     }
 
+    // CRITICAL FIX (V-12): Cryptographically secure verification code generation
+    private static int generateSecureVerificationCode() {
+        // Generate 6-digit verification code (100000-999999)
+        return 100000 + secureRandom.nextInt(900000);
+    }
+
+    @Deprecated
     private static int generateRandomCode() {
-        
-        Random rand = new Random();
-        int bound = 123;
-        int code = bound * rand.nextInt(bound);
-        return code;
+        // This method is deprecated, use generateSecureVerificationCode() instead
+        return generateSecureVerificationCode();
     }
 }

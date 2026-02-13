@@ -30,6 +30,11 @@ public interface AccountRepository extends CrudRepository<Account, Integer> {
     @Query(value = "SELECT COUNT(*) > 0 FROM accounts WHERE user_id = :user_id AND account_id = :account_id", nativeQuery = true)
     boolean isAccountOwnedByUser(@Param("user_id") long user_id, @Param("account_id") int account_id);
 
+    // CRITICAL FIX (V-18): Add pessimistic locking to prevent race conditions
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(value = "SELECT COALESCE(balance, 0) FROM accounts WHERE user_id = :user_id AND account_id = :account_id", nativeQuery = true)
+    BigDecimal getAccountBalanceWithLock(@Param("user_id") long user_id, @Param("account_id") int account_id);
+
     // CRITICAL FIX (V-19): Update to use BigDecimal instead of double
     @Modifying
     @Query(value = "UPDATE accounts SET balance = :new_balance WHERE account_id = :account_id", nativeQuery = true)

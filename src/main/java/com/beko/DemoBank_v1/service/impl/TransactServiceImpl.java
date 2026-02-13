@@ -51,16 +51,31 @@ public class TransactServiceImpl implements TransactService {
             System.out
                     .println("[3] accountId=" + accountId + ", depositAmount=" + depositAmount + ", userId=" + userId);
 
+            // CRITICAL FIX (V-03): Verify ownership before deposit
+            if (!accountRepository.isAccountOwnedByUser(userId, accountId)) {
+                logger.warn("Unauthorized deposit: User {} tried to deposit to account {}", userId, accountId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You are not authorized to perform this operation.");
+            }
+
+            if (depositAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.badRequest().body("Deposit amount must be greater than zero.");
+            }
+
+            if (depositAmount.compareTo(MAX_TRANSACTION_AMOUNT) > 0) {
+                return ResponseEntity.badRequest().body("Deposit amount exceeds maximum limit.");
+            }
+
             double currentBalance = accountRepository.getAccountBalance(userId, accountId);
             System.out.println("[4] currentBalance=" + currentBalance);
 
-            double newBalance = currentBalance + depositAmount;
+            BigDecimal newBalance = BigDecimal.valueOf(currentBalance).add(depositAmount);
             System.out.println("[5] newBalance=" + newBalance);
 
             accountRepository.changeAccountsBalanceById(newBalance, accountId);
             System.out.println("[6] Balance updated in DB");
 
-            transactRepository.logTransaction(accountId, userId, "deposit", depositAmount, "online", "success",
+            transactRepository.logTransaction(accountId, userId, "deposit", depositAmount.doubleValue(), "online", "success",
                     "Deposit Transaction Successful", LocalDateTime.now());
             System.out.println("[7] Transaction logged");
 
@@ -77,6 +92,7 @@ public class TransactServiceImpl implements TransactService {
             return handleException(e);
         }
     }
+
 
     @Override
     @Transactional
@@ -105,18 +121,18 @@ public class TransactServiceImpl implements TransactService {
 
             BigDecimal currentBalance = accountRepository.getAccountBalanceWithLock(userId, accountId);
 
-            if (currentBalance < paymentAmount) {
+            if (currentBalance.compareTo(withdrawalAmount) < 0) {
                 handleInsufficientFunds(accountId, userId);
-                return ResponseEntity.badRequest().body("You have insufficient funds to perform this payment.");
+                return ResponseEntity.badRequest().body("You have insufficient funds to perform this withdrawal.");
             }
 
             BigDecimal newBalance = currentBalance.subtract(withdrawalAmount);
             accountRepository.changeAccountsBalanceById(newBalance, accountId);
-            transactRepository.logTransaction(accountId, "Withdrawal", withdrawalAmount.doubleValue(), "online", "success",
+            transactRepository.logTransaction(accountId, userId, "Withdrawal", withdrawalAmount.doubleValue(), "online", "success",
                     "Withdrawal Transaction Successful", LocalDateTime.now());
 
-            transactRepository.logTransaction(accountId, userId, "Payment", paymentAmount, "online", "success",
-                    "Payment Transaction Successful", LocalDateTime.now());
+            logger.info("Successful withdrawal: User {} withdrew {} from account {}", userId, withdrawalAmount, accountId);
+            return ResponseEntity.ok(buildWithdrawalResponse(userId));
 
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().body("Invalid amount format.");
@@ -152,18 +168,18 @@ public class TransactServiceImpl implements TransactService {
 
             BigDecimal currentBalance = accountRepository.getAccountBalanceWithLock(userId, accountId);
 
-            if (currentBalance < withdrawalAmount) {
+            if (currentBalance.compareTo(paymentAmount) < 0) {
                 handleInsufficientFunds(accountId, userId);
-                return ResponseEntity.badRequest().body("You have insufficient funds to perform this withdrawal.");
+                return ResponseEntity.badRequest().body("You have insufficient funds to perform this payment.");
             }
 
             BigDecimal newBalance = currentBalance.subtract(paymentAmount);
             accountRepository.changeAccountsBalanceById(newBalance, accountId);
-            transactRepository.logTransaction(accountId, "Payment", paymentAmount.doubleValue(), "online", "success",
+            transactRepository.logTransaction(accountId, userId, "Payment", paymentAmount.doubleValue(), "online", "success",
                     "Payment Transaction Successful", LocalDateTime.now());
 
-            transactRepository.logTransaction(accountId, userId, "Withdrawal", withdrawalAmount, "online", "success",
-                    "Withdrawal Transaction Successful", LocalDateTime.now());
+            logger.info("Successful payment: User {} paid {} from account {}", userId, paymentAmount, accountId);
+            return ResponseEntity.ok(buildPaymentResponse(userId));
 
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().body("Invalid amount format.");
@@ -225,7 +241,7 @@ public class TransactServiceImpl implements TransactService {
             accountRepository.changeAccountsBalanceById(newSourceBalance, sourceAccountId);
             accountRepository.changeAccountsBalanceById(newTargetBalance, targetAccountId);
 
-            transactRepository.logTransaction(sourceAccountId, userId, "Transfer", transferAmount, "online", "success",
+            transactRepository.logTransaction(sourceAccountId, userId, "Transfer", transferAmount.doubleValue(), "online", "success",
                     "Transfer Transaction Successful", LocalDateTime.now());
 
             logger.info("Successful transfer: User {} transferred {} from {} to {}",
@@ -267,7 +283,7 @@ public class TransactServiceImpl implements TransactService {
     }
 
     private void handleInsufficientFunds(int accountId, long userId) {
-        transactRepository.logTransaction(accountId, userId, "withdrawal", 0.0, "online", "failed",
+        transactRepository.logTransaction(accountId, userId, "withdrawal", BigDecimal.ZERO, "online", "failed",
                 "Insufficient funds.",
                 LocalDateTime.now());
     }

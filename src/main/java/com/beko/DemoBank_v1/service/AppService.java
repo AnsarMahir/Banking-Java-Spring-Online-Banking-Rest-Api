@@ -7,8 +7,11 @@ import java.util.Map;
 
 public interface AppService {
     ResponseEntity<?> getDashboard(User user);
+
     ResponseEntity<?> getPaymentHistory(User user);
+
     ResponseEntity<?> getTransactionHistory(User user);
 
-    ResponseEntity<?> getAccountTransactionHistory(Map<String,String> requestMap);
+    // CRITICAL FIX (V-05): Added User parameter for ownership validation
+    ResponseEntity<?> getAccountTransactionHistory(Map<String, String> requestMap, User user);
 }

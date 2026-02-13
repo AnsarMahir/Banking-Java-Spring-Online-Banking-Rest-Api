@@ -95,6 +95,7 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     private void sendEmailNotification(String email, String emailBody) {
+        
         try {
             mailMessenger.htmlEmailMessenger("user@beko.com", email, "Verify Account", emailBody);
         } catch (MessagingException e) {
@@ -103,9 +104,11 @@ public class RegisterServiceImpl implements RegisterService {
         }
     }
 
-    // CRITICAL FIX (V-12): Use SecureRandom with much larger random space
-    private static int generateSecureVerificationCode() {
-        // Generate 6-digit code (100000-999999) using cryptographically secure random
-        return 100000 + secureRandom.nextInt(900000);
+    private static int generateRandomCode() {
+        
+        Random rand = new Random();
+        int bound = 123;
+        int code = bound * rand.nextInt(bound);
+        return code;
     }
 }

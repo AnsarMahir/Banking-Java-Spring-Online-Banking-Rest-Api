@@ -79,18 +79,25 @@ public class AppServiceImpl implements AppService {
     public ResponseEntity<?> getTransactionHistory(User user) {
         try {
             long userId = user.getUser_id();
+            System.out.println("[TXN_HISTORY] userId=" + userId);
+
             List<TransactionHistory> userTransactionHistory = transactHistoryRepository
                     .getTransactionRecordsById(userId);
+            System.out.println("[TXN_HISTORY] records found=" + userTransactionHistory.size());
+            for (TransactionHistory t : userTransactionHistory) {
+                System.out.println("[TXN_HISTORY] txn_id=" + t.getTransaction_id() + ", account_id=" + t.getAccount_id()
+                        + ", user_id=" + t.getUser_id() + ", type=" + t.getTransaction_type() + ", amount="
+                        + t.getAmount());
+            }
 
             Map<String, List> response = new HashMap<>();
             response.put("transaction_history", userTransactionHistory);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // CRITICAL FIX (V-20): Generic error message
-            logger.error("Error fetching transaction history for user {}", user.getUser_id(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error fetching transaction history.");
+            System.out.println("[TXN_HISTORY ERROR] " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error fetching transaction history: " + e.getMessage());
         }
     }
 

@@ -7,13 +7,13 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
 
-
 public interface TransactService {
-    public ResponseEntity deposit(Map<String, String> requestMap, User user);
 
-    public ResponseEntity payment(PaymentRequest request, User user);
+    ResponseEntity deposit(Map<String, String> requestMap, User user);
 
-    public ResponseEntity withdraw(Map<String, String> requestMap, User user);
+    ResponseEntity withdraw(Map<String, String> requestMap, User user);
 
-    public ResponseEntity transfer(TransferRequest request, User user);
+    ResponseEntity payment(PaymentRequest request, User user);
+
+    ResponseEntity transfer(TransferRequest request, User user);
 }

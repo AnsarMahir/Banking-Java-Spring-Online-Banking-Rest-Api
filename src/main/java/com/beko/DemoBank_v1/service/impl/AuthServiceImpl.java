@@ -3,6 +3,7 @@ package com.beko.DemoBank_v1.service.impl;
 import com.beko.DemoBank_v1.helpers.Token;
 import com.beko.DemoBank_v1.helpers.authorization.JwtService;
 import com.beko.DemoBank_v1.models.User;
+import com.beko.DemoBank_v1.repository.BlacklistedTokenRepository;
 import com.beko.DemoBank_v1.repository.UserRepository;
 import com.beko.DemoBank_v1.service.AuthService;
 import org.slf4j.Logger;
@@ -15,6 +16,9 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,11 +29,13 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Autowired
-    public AuthServiceImpl(UserRepository userRepository, JwtService jwtService) {
+    public AuthServiceImpl(UserRepository userRepository, JwtService jwtService, BlacklistedTokenRepository blacklistedTokenRepository) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
     }
 
     @Override
@@ -92,9 +98,29 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<?> logout(HttpSession session) {
         try {
+            // Get token from session before invalidating
+            String token = (String) session.getAttribute("token");
+            
+            if (token != null) {
+                // Get token expiration date
+                Date expirationDate = jwtService.getTokenExpiration(token);
+                
+                if (expirationDate != null) {
+                    // Convert Date to LocalDateTime
+                    LocalDateTime expiresAt = expirationDate.toInstant()
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+                    
+                    // Add token to blacklist
+                    blacklistedTokenRepository.blacklistToken(token, expiresAt);
+                    logger.info("Token blacklisted successfully");
+                }
+            }
+            
             session.invalidate();
             return ResponseEntity.ok("Logged out successfully.");
         } catch (Exception e) {
+            logger.error("Logout error: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
         }
     }

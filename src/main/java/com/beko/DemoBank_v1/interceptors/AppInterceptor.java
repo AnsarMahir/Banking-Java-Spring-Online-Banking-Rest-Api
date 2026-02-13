@@ -3,6 +3,7 @@ package com.beko.DemoBank_v1.interceptors;
 import com.beko.DemoBank_v1.exception.CustomError;
 import com.beko.DemoBank_v1.helpers.authorization.JwtService;
 import com.beko.DemoBank_v1.models.User;
+import com.beko.DemoBank_v1.repository.BlacklistedTokenRepository;
 import com.beko.DemoBank_v1.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
@@ -24,10 +25,12 @@ public class AppInterceptor implements HandlerInterceptor {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
-
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
+    
     @Autowired
-    public AppInterceptor(UserRepository userRepository, JwtService jwtService) {
+    public AppInterceptor(UserRepository userRepository, BlacklistedTokenRepository blacklistedTokenRepository, JwtService jwtService) {
         this.userRepository = userRepository;
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
         // CRITICAL FIX (V-22): Use @Autowired JwtService instead of manual instantiation
         this.jwtService = jwtService;
     }
@@ -58,6 +61,11 @@ public class AppInterceptor implements HandlerInterceptor {
 
             // Get Access Token From Header
             String token = jwtService.getAccessTokenFromHeader(header);
+
+            //Check if token is blacklisted
+            if(blacklistedTokenRepository.isTokenBlacklisted(token)) {
+                throw new CustomError("Token has been revoked. Please login again.", HttpServletResponse.SC_UNAUTHORIZED);
+            }
 
             // CRITICAL FIX (V-06): Add null check before using claims
             Claims claims = jwtService.decodeToken(token);
